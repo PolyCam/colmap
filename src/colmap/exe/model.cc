@@ -337,7 +337,6 @@ int RunModelAligner(int argc, char** argv) {
   Reconstruction reconstruction;
   reconstruction.Read(input_path);
   Sim3d tform;
-  bool alignment_success = true;
 
   if (alignment_type == "plane") {
     PrintHeading2("Aligning reconstruction to principal plane");
@@ -354,6 +353,12 @@ int RunModelAligner(int argc, char** argv) {
                                        min_common_images,
                                        ransac_options,
                                        &tform);
+    if (alignment_success) {
+      reconstruction.Transform(tform);
+    } else {
+      LOG(INFO) << "=> Alignment failed";
+      return EXIT_FAILURE;
+    }
 
     std::vector<double> errors;
     errors.reserve(ref_image_names.size());
@@ -368,7 +373,7 @@ int RunModelAligner(int argc, char** argv) {
                               Mean(errors),
                               Median(errors));
 
-    if (alignment_success && StringStartsWith(alignment_type, "enu-plane")) {
+    if (StringStartsWith(alignment_type, "enu-plane")) {
       PrintHeading2("Aligning ECEF aligned reconstruction to ENU plane");
       AlignToENUPlane(
           &reconstruction, &tform, alignment_type == "enu-plane-unscaled");
@@ -401,17 +406,12 @@ int RunModelAligner(int argc, char** argv) {
     }
   }
 
-  if (alignment_success) {
-    LOG(INFO) << "=> Alignment succeeded";
-    reconstruction.Write(output_path);
-    if (!transform_path.empty()) {
-      tform.ToFile(transform_path);
-    }
-    return EXIT_SUCCESS;
-  } else {
-    LOG(INFO) << "=> Alignment failed";
-    return EXIT_FAILURE;
+  LOG(INFO) << "=> Alignment succeeded";
+  reconstruction.Write(output_path);
+  if (!transform_path.empty()) {
+    tform.ToFile(transform_path);
   }
+  return EXIT_SUCCESS;
 }
 
 int RunModelAnalyzer(int argc, char** argv) {
