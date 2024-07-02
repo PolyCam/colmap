@@ -1566,7 +1566,7 @@ void Reconstruction::ReadImagesText(const std::string& path) {
     image.SetCameraId(std::stoul(item));
 
     // NAME
-    std::getline(line_stream1, item, ' ');
+    std::getline(line_stream1, item);
     image.SetName(item);
 
     // POINTS2D
